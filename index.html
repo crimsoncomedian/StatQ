@@ -1,0 +1,171 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistical Question Classifier</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    .dropzone {
+      min-height: 200px;
+      padding: 20px;
+      border-radius: 5px;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      transition: background-color 0.3s ease;
+    }
+
+    .question {
+      background-color: white;
+      padding: 10px 15px;
+      margin: 10px;
+      border-radius: 8px;
+      cursor: move;
+      display: inline-block;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      font-size: 16px;
+      border: 1px solid #ddd;
+      white-space: nowrap;
+      color: black; /* Ensures the text color stays black */
+    }
+
+    .question.dropped {
+      margin: 5px 0;
+    }
+
+    .correct {
+      color: green;
+    }
+
+    .incorrect {
+      color: red;
+    }
+
+    .dropzone {
+      margin-bottom: 20px; /* Adds space between the dropzones and the feedback message */
+    }
+
+    .alert {
+      margin-top: 20px; /* Adds space between the dropzones and the feedback message */
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-4">
+    <h1 class="text-center mb-4">Classify the Questions</h1>
+
+    <!-- Questions Panel -->
+    <div class="bg-light p-4 rounded mb-4">
+      <h2>Questions</h2>
+      <div id="questions" class="d-flex flex-wrap">
+        <!-- Questions will be populated here dynamically -->
+      </div>
+    </div>
+
+    <!-- Dropzones -->
+    <div class="d-flex justify-content-between">
+      <div 
+        id="statisticalZone"
+        class="dropzone bg-info text-white flex-fill mr-2"
+        ondragover="allowDrop(event)"
+        ondrop="handleDrop(event, 'statistical')"
+      >
+        <h3>Statistical</h3>
+      </div>
+      <div 
+        id="nonStatisticalZone"
+        class="dropzone bg-success text-white flex-fill ml-2"
+        ondragover="allowDrop(event)"
+        ondrop="handleDrop(event, 'nonStatistical')"
+      >
+        <h3>Non-Statistical</h3>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback" class="alert d-none" role="alert">
+      <!-- Feedback message will be inserted here -->
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      { id: 'q1', text: "How many siblings do you have?", isStatistical: false },
+      { id: 'q2', text: "What is the average number of siblings in the class?", isStatistical: true },
+      { id: 'q3', text: "What's your favorite color?", isStatistical: false },
+      { id: 'q4', text: "What percentage of students prefer online classes?", isStatistical: true },
+      { id: 'q5', text: "How tall are you?", isStatistical: false },
+      { id: 'q6', text: "What is the median height of students in the school?", isStatistical: true },
+    ];
+
+    // Populate the questions into the "Questions" panel
+    const questionContainer = document.getElementById('questions');
+    questions.forEach(question => {
+      const questionDiv = document.createElement('div');
+      questionDiv.className = 'question shadow-sm';
+      questionDiv.textContent = question.text;
+      questionDiv.draggable = true;
+      questionDiv.dataset.id = question.id;
+      questionDiv.dataset.isStatistical = question.isStatistical;
+      questionDiv.ondragstart = (event) => handleDragStart(event, question.id);
+      questionContainer.appendChild(questionDiv);
+    });
+
+    // Drag and Drop handlers
+    function allowDrop(event) {
+      event.preventDefault();
+    }
+
+    function handleDragStart(event, id) {
+      event.dataTransfer.setData('questionId', id);
+    }
+
+    function handleDrop(event, category) {
+      event.preventDefault();
+      const questionId = event.dataTransfer.getData('questionId');
+      const question = questions.find(q => q.id === questionId);
+      if (!question) return;
+
+      const isCorrect = (category === 'statistical') === question.isStatistical;
+      const questionElement = document.querySelector(`[data-id="${questionId}"]`);
+
+      if (isCorrect) {
+        // Move the question to the correct dropzone
+        const dropzone = category === 'statistical' 
+          ? document.getElementById('statisticalZone')
+          : document.getElementById('nonStatisticalZone');
+        
+        // Append the question and keep its style intact
+        dropzone.appendChild(questionElement);
+        questionElement.classList.add('dropped');
+
+        displayFeedback(true, question.isStatistical);
+      } else {
+        // Show feedback for incorrect drop
+        displayFeedback(false, question.isStatistical);
+      }
+    }
+
+    // Feedback function
+    function displayFeedback(isCorrect, isStatistical) {
+      const feedback = document.getElementById('feedback');
+      feedback.classList.remove('d-none', 'alert-success', 'alert-danger');
+
+      if (isCorrect) {
+        feedback.classList.add('alert-success');
+        feedback.innerHTML = `<i class="fas fa-check-circle correct"></i> <strong>Correct!</strong> ${isStatistical 
+          ? "This is a statistical question because it involves analyzing data from a group."
+          : "This is a non-statistical question because it refers to an individual's attribute."}`;
+      } else {
+        feedback.classList.add('alert-danger');
+        feedback.innerHTML = `<i class="fas fa-exclamation-circle incorrect"></i> <strong>Incorrect!</strong> ${isStatistical 
+          ? "This is actually a statistical question because it involves group data."
+          : "This is actually a non-statistical question because it is specific to an individual."}`;
+      }
+    }
+  </script>
+</body>
+</html>
